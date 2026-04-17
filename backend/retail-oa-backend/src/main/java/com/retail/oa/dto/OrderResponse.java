@@ -1,50 +1,31 @@
-package com.retail.oa.entity;
+package com.retail.oa.dto;
 
 /**
  * @program: retail-oa-backend
- * @description: order entity
+ * @description:
  * @author: MichaelLong
- * @create: 2026-03-14 22:30
+ * @create: 2026-04-11 18:37
  **/
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "orders")
-public class Order {
+public class OrderResponse {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "order_number", nullable = false, unique = true, length = 50)
     private String orderNumber;
-
-    @Column(nullable = false, length = 30)
     private String status;
-
-    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<OrderItem> items = new ArrayList<>();
-
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-    }
+    private List<OrderItemResponse> items;
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getOrderNumber() {
@@ -75,11 +56,15 @@ public class Order {
         return createdAt;
     }
 
-    public List<OrderItem> getItems() {
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public List<OrderItemResponse> getItems() {
         return items;
     }
 
-    public void setItems(List<OrderItem> items) {
+    public void setItems(List<OrderItemResponse> items) {
         this.items = items;
     }
 }

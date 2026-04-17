@@ -12,6 +12,8 @@ import com.retail.oa.service.ProductService;
 import com.retail.oa.dto.StockUpdateRequest;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import com.retail.oa.entity.InventoryLog;
+import com.retail.oa.repository.InventoryLogRepository;
 
 import java.util.List;
 
@@ -20,9 +22,11 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final InventoryLogRepository inventoryLogRepository;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, InventoryLogRepository inventoryLogRepository) {
         this.productService = productService;
+        this.inventoryLogRepository = inventoryLogRepository;
     }
 
     @GetMapping
@@ -53,11 +57,16 @@ public class ProductController {
 
     @PutMapping("/{id}/stock/in")
     public Product stockIn(@PathVariable Long id, @Valid @RequestBody StockUpdateRequest request) {
-        return productService.stockIn(id, request.getQuantity());
+        return productService.stockIn(id, request.getQuantity(), request.getRemark());
     }
 
     @PutMapping("/{id}/stock/out")
     public Product stockOut(@PathVariable Long id, @Valid @RequestBody StockUpdateRequest request) {
-        return productService.stockOut(id, request.getQuantity());
+        return productService.stockOut(id, request.getQuantity(), request.getRemark());
+    }
+
+    @GetMapping("/{id}/inventory-logs")
+    public List<InventoryLog> getInventoryLogsByProductId(@PathVariable Long id) {
+        return inventoryLogRepository.findByProductIdOrderByCreatedAtDesc(id);
     }
 }

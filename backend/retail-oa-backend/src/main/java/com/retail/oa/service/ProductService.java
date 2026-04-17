@@ -7,23 +7,27 @@ package com.retail.oa.service;
  * @create: 2026-03-14 22:35
  **/
 
+import com.retail.oa.entity.InventoryLog;
 import com.retail.oa.entity.Product;
-import com.retail.oa.repository.ProductRepository;
-import org.springframework.stereotype.Service;
-import com.retail.oa.exception.ResourceNotFoundException;
 import com.retail.oa.exception.DuplicateResourceException;
 import com.retail.oa.exception.InsufficientStockException;
+import com.retail.oa.exception.ResourceNotFoundException;
+import com.retail.oa.repository.InventoryLogRepository;
+import com.retail.oa.repository.ProductRepository;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final InventoryLogRepository inventoryLogRepository;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository,
+                          InventoryLogRepository inventoryLogRepository) {
         this.productRepository = productRepository;
+        this.inventoryLogRepository = inventoryLogRepository;
     }
 
     public List<Product> getAllProducts() {
@@ -37,7 +41,7 @@ public class ProductService {
 
     public Product createProduct(Product product) {
         if (productRepository.existsBySku(product.getSku())) {
-            throw new RuntimeException("SKU already exists");
+            throw new DuplicateResourceException("SKU already exists");
         }
         return productRepository.save(product);
     }
@@ -68,15 +72,25 @@ public class ProductService {
         productRepository.delete(existingProduct);
     }
 
-    public Product stockIn(Long id, Integer quantity) {
+    public Product stockIn(Long id, Integer quantity, String remark) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
         product.setStock(product.getStock() + quantity);
-        return productRepository.save(product);
+        Product updatedProduct = productRepository.save(product);
+
+        InventoryLog log = new InventoryLog();
+        log.setProduct(updatedProduct);
+        log.setChangeType("IN");
+        log.setQuantity(quantity);
+        log.setRemark(remark);
+
+        inventoryLogRepository.save(log);
+
+        return updatedProduct;
     }
 
-    public Product stockOut(Long id, Integer quantity) {
+    public Product stockOut(Long id, Integer quantity, String remark) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
@@ -85,6 +99,16 @@ public class ProductService {
         }
 
         product.setStock(product.getStock() - quantity);
-        return productRepository.save(product);
+        Product updatedProduct = productRepository.save(product);
+
+        InventoryLog log = new InventoryLog();
+        log.setProduct(updatedProduct);
+        log.setChangeType("OUT");
+        log.setQuantity(quantity);
+        log.setRemark(remark);
+
+        inventoryLogRepository.save(log);
+
+        return updatedProduct;
     }
 }

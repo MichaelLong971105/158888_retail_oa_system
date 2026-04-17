@@ -8,6 +8,7 @@ package com.retail.oa.entity;
  **/
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 @Table(name = "order_items")
@@ -17,50 +18,51 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long orderId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference
+    private Order order;
 
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
-
-    public OrderItem() {}
 
     public Long getId() {
         return id;
     }
 
-    public Long getOrderId() {
-        return orderId;
+    public Order getOrder() {
+        return order;
     }
 
-    public Long getProductId() {
-        return productId;
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public Integer getQuantity() {
         return quantity;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
     }
 
     public void setPrice(BigDecimal price) {

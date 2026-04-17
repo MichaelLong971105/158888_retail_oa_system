@@ -12,12 +12,14 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Product {
 
     @Id
@@ -50,7 +52,7 @@ public class Product {
     @Column(length = 255)
     private String description;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     public Product() {
@@ -68,6 +70,11 @@ public class Product {
         this.createdAt = createdAt;
     }
 
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
+
     public Long getId() {
         return id;
     }
@@ -76,51 +83,51 @@ public class Product {
         this.id = id;
     }
 
-    public @NotBlank(message = "Product name cannot be blank") @Size(max = 255, message = "Product name cannot exceed 255 characters") String getName() {
+    public String getName() {
         return name;
     }
 
-    public void setName(@NotBlank(message = "Product name cannot be blank") @Size(max = 255, message = "Product name cannot exceed 255 characters") String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
-    public @NotBlank(message = "SKU cannot be blank") @Size(max = 50, message = "SKU cannot exceed 50 characters") String getSku() {
+    public String getSku() {
         return sku;
     }
 
-    public void setSku(@NotBlank(message = "SKU cannot be blank") @Size(max = 50, message = "SKU cannot exceed 50 characters") String sku) {
+    public void setSku(String sku) {
         this.sku = sku;
     }
 
-    public @Size(max = 50, message = "Category cannot exceed 50 characters") String getCategory() {
+    public String getCategory() {
         return category;
     }
 
-    public void setCategory(@Size(max = 50, message = "Category cannot exceed 50 characters") String category) {
+    public void setCategory(String category) {
         this.category = category;
     }
 
-    public @DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be less than 0") BigDecimal getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(@DecimalMin(value = "0.0", inclusive = true, message = "Price cannot be less than 0") BigDecimal price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
-    public @Min(value = 0, message = "Stock cannot be less than 0") Integer getStock() {
+    public Integer getStock() {
         return stock;
     }
 
-    public void setStock(@Min(value = 0, message = "Stock cannot be less than 0") Integer stock) {
+    public void setStock(Integer stock) {
         this.stock = stock;
     }
 
-    public @Size(max = 255, message = "Description cannot exceed 255 characters") String getDescription() {
+    public String getDescription() {
         return description;
     }
 
-    public void setDescription(@Size(max = 255, message = "Description cannot exceed 255 characters") String description) {
+    public void setDescription(String description) {
         this.description = description;
     }
 

@@ -4,28 +4,27 @@ package com.retail.oa.dto;
  * @program: retail-oa-backend
  * @description:
  * @author: MichaelLong
- * @create: 2026-04-06 02:00
+ * @create: 2026-04-11 13:27
  **/
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
-public class StockUpdateRequest {
+public class OrderItemRequest {
+
+    @NotNull(message = "Product ID cannot be null")
+    private Long productId;
 
     @NotNull(message = "Quantity cannot be null")
     @Min(value = 1, message = "Quantity must be greater than 0")
     private Integer quantity;
 
-    @Size(max = 255, message = "Remark cannot exceed 255 characters")
-    private String remark;
-
-    public StockUpdateRequest() {
+    public Long getProductId() {
+        return productId;
     }
 
-    public StockUpdateRequest(Integer quantity, String remark) {
-        this.quantity = quantity;
-        this.remark = remark;
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 
     public Integer getQuantity() {
@@ -34,13 +33,5 @@ public class StockUpdateRequest {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
     }
 }
