@@ -1,11 +1,8 @@
 package com.retail.oa.exception;
 
 /**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-06 01:50
- **/
+ * Thrown when a requested resource does not exist.
+ */
 public class ResourceNotFoundException extends RuntimeException {
 
     public ResourceNotFoundException(String message) {

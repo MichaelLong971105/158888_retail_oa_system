@@ -10,7 +10,14 @@ package com.retail.oa.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
+/**
+ * Request DTO used by manual stock in and stock out endpoints.
+ */
+@Getter
+@Setter
 public class StockUpdateRequest {
 
     @NotNull(message = "Quantity cannot be null")
@@ -25,22 +32,6 @@ public class StockUpdateRequest {
 
     public StockUpdateRequest(Integer quantity, String remark) {
         this.quantity = quantity;
-        this.remark = remark;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
         this.remark = remark;
     }
 }

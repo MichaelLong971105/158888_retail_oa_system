@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handles user CRUD operations and duplicate checks.
+ */
 @Service
 public class UserService {
 
@@ -24,14 +27,23 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Returns all users.
+     */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    /**
+     * Returns one user by id.
+     */
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
+    /**
+     * Creates a new user after validating username and email uniqueness.
+     */
     public User createUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new DuplicateResourceException("Username already exists");
@@ -42,6 +54,9 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Updates an existing user while preserving uniqueness constraints.
+     */
     public Optional<User> updateUser(Long id, User updatedUser) {
         return userRepository.findById(id).map(existingUser -> {
             if (!existingUser.getUsername().equals(updatedUser.getUsername())
@@ -63,6 +78,9 @@ public class UserService {
         });
     }
 
+    /**
+     * Deletes a user by id and returns whether the deletion was performed.
+     */
     public boolean deleteUser(Long id) {
         if (userRepository.existsById(id)) {
             userRepository.deleteById(id);

@@ -1,11 +1,8 @@
 package com.retail.oa.exception;
 
 /**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-04 01:17
- **/
+ * Thrown when a resource violates a uniqueness rule.
+ */
 public class DuplicateResourceException extends RuntimeException {
 
     public DuplicateResourceException(String message) {

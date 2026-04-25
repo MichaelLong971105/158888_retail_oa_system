@@ -11,10 +11,17 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Stores one inventory change record for a product.
+ */
 @Entity
+@Getter
+@Setter
 @Table(name = "inventory_logs")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class InventoryLog {
@@ -53,52 +60,12 @@ public class InventoryLog {
         this.createdAt = createdAt;
     }
 
+    /**
+     * Automatically sets the creation timestamp before the record is inserted.
+     */
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
-    public String getChangeType() {
-        return changeType;
-    }
-
-    public void setChangeType(String changeType) {
-        this.changeType = changeType;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public String getRemark() {
-        return remark;
-    }
-
-    public void setRemark(String remark) {
-        this.remark = remark;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
 }

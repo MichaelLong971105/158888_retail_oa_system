@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Exposes user management APIs.
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -25,11 +28,17 @@ public class UserController {
         this.userService = userService;
     }
 
+    /**
+     * Returns all users.
+     */
     @GetMapping
     public List<User> getAllUsers() {
         return userService.getAllUsers();
     }
 
+    /**
+     * Returns one user by id.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
         return userService.getUserById(id)
@@ -37,11 +46,17 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Creates a new user.
+     */
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         return userService.createUser(user);
     }
 
+    /**
+     * Updates an existing user.
+     */
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User updatedUser) {
         return userService.updateUser(id, updatedUser)
@@ -49,6 +64,9 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Deletes a user by id.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (userService.deleteUser(id)) {
