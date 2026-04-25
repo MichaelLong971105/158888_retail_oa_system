@@ -7,10 +7,18 @@ package com.retail.oa.dto;
  * @create: 2026-04-11 18:37
  **/
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Response DTO returned for purchase order APIs.
+ */
+@Getter
+@Setter
 public class OrderResponse {
 
     private Long id;
@@ -19,52 +27,6 @@ public class OrderResponse {
     private BigDecimal totalAmount;
     private LocalDateTime createdAt;
     private List<OrderItemResponse> items;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public List<OrderItemResponse> getItems() {
-        return items;
-    }
-
-    public void setItems(List<OrderItemResponse> items) {
-        this.items = items;
-    }
+    private Long supplierId;
+    private String supplierName;
 }

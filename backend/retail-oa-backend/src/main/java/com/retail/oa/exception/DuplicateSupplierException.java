@@ -1,11 +1,10 @@
-package com.retail.oa.exception;/**
- * @program: retail-oa-backend
- *
- * @description: 
- *
- * @author: MichaelLong
- *
- * @create: 2026-04-17 12:51
- **/
-public class DuplicateSupplierException {
+package com.retail.oa.exception;
+
+/**
+ * Thrown when a supplier name conflicts with an existing record.
+ */
+public class DuplicateSupplierException extends RuntimeException {
+    public DuplicateSupplierException(String message) {
+        super(message);
+    }
 }
