@@ -13,14 +13,20 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.retail.oa.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Security configuration for session-based login and role-based access control.
@@ -45,9 +51,30 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/me", "/auth/logout").authenticated()
-                        .requestMatchers("/users/**").hasRole("ADMIN")
-                        .requestMatchers("/suppliers/**", "/orders/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/products/**").hasAnyRole("ADMIN", "MANAGER", "STAFF")
+                        .requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN", "MANAGE_USERS")
+                        .requestMatchers("/suppliers/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_SUPPLIERS")
+                        .requestMatchers("/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_ORDERS")
+                        .requestMatchers(HttpMethod.PUT, "/attendance/schedules/week").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_ATTENDANCE"
+                        )
+                        .requestMatchers(HttpMethod.POST, "/attendance/leave-requests/*/approve", "/attendance/leave-requests/*/reject")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "APPROVE_LEAVE", "MANAGE_ATTENDANCE")
+                        .requestMatchers(HttpMethod.POST, "/attendance/punch-records").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_ATTENDANCE"
+                        )
+                        .requestMatchers(HttpMethod.GET, "/attendance/**").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "ROLE_STAFF", "VIEW_ATTENDANCE", "MANAGE_ATTENDANCE", "APPROVE_LEAVE"
+                        )
+                        .requestMatchers("/attendance/**").authenticated()
+                        .requestMatchers("/products/**").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "ROLE_STAFF", "MANAGE_PRODUCTS", "MANAGE_INVENTORY"
+                        )
+                        .requestMatchers(HttpMethod.GET, "/sales/**").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "VIEW_SALES", "MANAGE_SALES"
+                        )
+                        .requestMatchers("/sales/**").hasAnyAuthority(
+                                "ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_SALES", "MANAGE_POS"
+                        )
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
@@ -72,9 +99,15 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByUsername(username)
                 .map(user -> {
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+                    user.getAdditionalPermissions()
+                            .forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.name())));
+
                     UserDetails userDetails = User.withUsername(user.getUsername())
                             .password(user.getPassword())
-                            .roles(user.getRole().name())
+                            .authorities(authorities)
+                            .disabled(!user.isEnabled())
                             .build();
                     return userDetails;
                 })
@@ -83,15 +116,28 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        BCryptPasswordEncoder delegate = new BCryptPasswordEncoder();
         return new PasswordEncoder() {
             @Override
             public String encode(CharSequence rawPassword) {
-                return rawPassword.toString();
+                return delegate.encode(rawPassword);
             }
 
             @Override
             public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                return encodedPassword != null && encodedPassword.equals(rawPassword.toString());
+                if (encodedPassword == null) {
+                    return false;
+                }
+
+                if (encodedPassword.equals(rawPassword.toString())) {
+                    return true;
+                }
+
+                try {
+                    return delegate.matches(rawPassword, encodedPassword);
+                } catch (IllegalArgumentException ex) {
+                    return false;
+                }
             }
         };
     }

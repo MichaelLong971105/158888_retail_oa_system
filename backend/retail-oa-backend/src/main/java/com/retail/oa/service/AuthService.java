@@ -33,6 +33,10 @@ public class AuthService {
         response.setUsername(user.getUsername());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
+        response.setEnabled(user.isEnabled());
+        response.getPermissions().addAll(
+                user.getAdditionalPermissions().stream().map(Enum::name).toList()
+        );
         return response;
     }
 }

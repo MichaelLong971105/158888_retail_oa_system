@@ -3,17 +3,18 @@
     <el-aside width="220px" class="sidebar">
       <div class="logo">Retail OA System</div>
 
-      <el-menu
-        router
-        :default-active="$route.path"
-        class="menu"
-      >
+        <el-menu
+          router
+          :default-active="$route.path"
+          class="menu"
+        >
         <el-menu-item
           v-for="item in visibleMenuItems"
           :key="item.index"
           :index="item.index"
         >
-          {{ item.label }}
+          <el-icon><component :is="item.icon" /></el-icon>
+          <span>{{ item.label }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -43,22 +44,34 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import {
+  Calendar,
+  DataBoard,
+  Goods,
+  Histogram,
+  List,
+  OfficeBuilding,
+  Setting,
+  User
+} from '@element-plus/icons-vue'
 import { logout } from '../api/auth'
-import { authState, clearCurrentUser, hasAnyRole } from '../utils/auth'
+import { authState, canAccess, clearCurrentUser } from '../utils/auth'
 
 const router = useRouter()
 
 const menuItems = [
-  { index: '/dashboard', label: 'Dashboard', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { index: '/products', label: 'Product Management', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { index: '/suppliers', label: 'Supplier Management', roles: ['ADMIN', 'MANAGER'] },
-  { index: '/orders', label: 'Order Management', roles: ['ADMIN', 'MANAGER'] },
-  { index: '/inventory', label: 'Inventory Management', roles: ['ADMIN', 'MANAGER', 'STAFF'] },
-  { index: '/users', label: 'User Management', roles: ['ADMIN'] }
+  { index: '/dashboard', label: 'Dashboard', icon: DataBoard, roles: ['ADMIN', 'MANAGER', 'STAFF'] },
+  { index: '/attendance', label: 'Attendance', icon: Calendar, roles: ['ADMIN', 'MANAGER', 'STAFF'], permissions: ['VIEW_ATTENDANCE', 'MANAGE_ATTENDANCE', 'APPROVE_LEAVE'] },
+  { index: '/products', label: 'Product Management', icon: Goods, roles: ['ADMIN', 'MANAGER', 'STAFF'], permissions: ['MANAGE_PRODUCTS'] },
+  { index: '/suppliers', label: 'Supplier Management', icon: OfficeBuilding, roles: ['ADMIN', 'MANAGER'], permissions: ['MANAGE_SUPPLIERS'] },
+  { index: '/orders', label: 'Order Management', icon: List, roles: ['ADMIN', 'MANAGER'], permissions: ['MANAGE_ORDERS'] },
+  { index: '/inventory', label: 'Inventory Management', icon: Setting, roles: ['ADMIN', 'MANAGER', 'STAFF'], permissions: ['MANAGE_INVENTORY'] },
+  { index: '/sales', label: 'Sales Management', icon: Histogram, roles: ['ADMIN', 'MANAGER'], permissions: ['VIEW_SALES', 'MANAGE_SALES', 'MANAGE_POS'] },
+  { index: '/users', label: 'User Management', icon: User, roles: ['ADMIN'], permissions: ['MANAGE_USERS'] }
 ]
 
 const visibleMenuItems = computed(() =>
-  menuItems.filter(item => hasAnyRole(item.roles))
+  menuItems.filter(item => canAccess(item.roles || [], item.permissions || []))
 )
 
 const handleLogout = async () => {
@@ -96,6 +109,10 @@ const handleLogout = async () => {
 
 .menu {
   border-right: none;
+  --el-menu-bg-color: #1f2937;
+  --el-menu-text-color: #d1d5db;
+  --el-menu-hover-bg-color: #111827;
+  --el-menu-active-color: #ffffff;
 }
 
 .header {
@@ -127,5 +144,6 @@ const handleLogout = async () => {
 
 .main-content {
   background-color: #f5f7fa;
+  padding: 20px;
 }
 </style>

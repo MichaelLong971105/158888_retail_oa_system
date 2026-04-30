@@ -102,6 +102,47 @@
       </el-col>
     </el-row>
 
+    <el-row v-if="canViewSales" :gutter="16" class="content-row">
+      <el-col :xs="24" :lg="8">
+        <el-card class="summary-card">
+          <div class="summary-label">Today's Sales Amount</div>
+          <div class="summary-value money">{{ formatCurrency(salesDashboard.todaySalesAmount) }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="8">
+        <el-card class="summary-card">
+          <div class="summary-label">Today's Sales Count</div>
+          <div class="summary-value">{{ salesDashboard.todaySalesCount || 0 }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :lg="8">
+        <el-card class="summary-card">
+          <div class="summary-label">Top Selling SKUs</div>
+          <div class="summary-value">{{ salesDashboard.topSellingProducts?.length || 0 }}</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-card v-if="canViewSales">
+      <template #header>
+        <div class="card-header">
+          <span>Top 10 Best-Selling Products Today</span>
+        </div>
+      </template>
+
+      <el-table :data="salesDashboard.topSellingProducts || []" style="width: 100%" v-loading="loading">
+        <el-table-column type="index" label="#" width="60" />
+        <el-table-column prop="productName" label="Product" min-width="180" />
+        <el-table-column prop="productSku" label="SKU" width="140" />
+        <el-table-column prop="totalQuantity" label="Sold Qty" width="120" />
+        <el-table-column prop="totalAmount" label="Sales Amount" width="160">
+          <template #default="scope">
+            {{ formatCurrency(scope.row.totalAmount) }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
     <el-card>
       <template #header>
         <div class="card-header">
@@ -137,15 +178,21 @@ import { getAllProducts } from '../../api/product'
 import { getAllSuppliers } from '../../api/supplier'
 import { getAllUsers } from '../../api/user'
 import { getAllOrders, getOrderStats } from '../../api/order'
-import { getCurrentRole } from '../../utils/auth'
+import { getSalesDashboard } from '../../api/sales'
+import { canAccess } from '../../utils/auth'
 
 const loading = ref(false)
 const recentOrders = ref([])
 const orderStats = ref({})
-const currentRole = getCurrentRole()
-const canViewOrders = currentRole === 'ADMIN' || currentRole === 'MANAGER'
-const canViewSuppliers = currentRole === 'ADMIN' || currentRole === 'MANAGER'
-const canViewUsers = currentRole === 'ADMIN'
+const salesDashboard = ref({
+  todaySalesAmount: 0,
+  todaySalesCount: 0,
+  topSellingProducts: []
+})
+const canViewOrders = canAccess(['ADMIN', 'MANAGER'], ['MANAGE_ORDERS'])
+const canViewSuppliers = canAccess(['ADMIN', 'MANAGER'], ['MANAGE_SUPPLIERS'])
+const canViewUsers = canAccess(['ADMIN'], ['MANAGE_USERS'])
+const canViewSales = canAccess(['ADMIN', 'MANAGER'], ['VIEW_SALES', 'MANAGE_SALES', 'MANAGE_POS'])
 const summary = reactive({
   totalProducts: 0,
   totalSuppliers: null,
@@ -199,6 +246,10 @@ const loadDashboardData = async () => {
       requests.push(getOrderStats())
     }
 
+    if (canViewSales) {
+      requests.push(getSalesDashboard())
+    }
+
     const responses = await Promise.all(requests)
 
     const products = productsResponse.data || []
@@ -207,6 +258,7 @@ const loadDashboardData = async () => {
     let users = []
     let orders = []
     let stats = {}
+    let dashboard = salesDashboard.value
 
     if (canViewSuppliers) {
       suppliers = responses[responseIndex]?.data || []
@@ -222,6 +274,11 @@ const loadDashboardData = async () => {
       orders = responses[responseIndex]?.data || []
       responseIndex += 1
       stats = responses[responseIndex]?.data || {}
+      responseIndex += 1
+    }
+
+    if (canViewSales) {
+      dashboard = responses[responseIndex]?.data || salesDashboard.value
     }
 
     summary.totalProducts = products.length
@@ -240,6 +297,7 @@ const loadDashboardData = async () => {
       : []
 
     orderStats.value = stats
+    salesDashboard.value = dashboard
   } catch (error) {
     ElMessage.error(error.response?.data?.error || 'Failed to load dashboard data')
   } finally {
@@ -294,6 +352,10 @@ onMounted(() => {
   font-size: 32px;
   font-weight: 700;
   color: #303133;
+}
+
+.summary-value.money {
+  font-size: 28px;
 }
 
 .metric-box {

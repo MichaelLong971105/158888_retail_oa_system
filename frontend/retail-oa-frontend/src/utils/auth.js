@@ -42,6 +42,10 @@ export function getCurrentRole() {
   return authState.user?.role || null
 }
 
+export function getCurrentPermissions() {
+  return authState.user?.permissions || []
+}
+
 export function isLoggedIn() {
   return !!authState.user
 }
@@ -53,6 +57,23 @@ export function hasAnyRole(roles = []) {
 
   const currentRole = getCurrentRole()
   return !!currentRole && roles.includes(currentRole)
+}
+
+export function hasAnyPermission(permissions = []) {
+  if (permissions.length === 0) {
+    return true
+  }
+
+  const currentPermissions = new Set(getCurrentPermissions())
+  return permissions.some(permission => currentPermissions.has(permission))
+}
+
+export function canAccess(roles = [], permissions = []) {
+  if (roles.length === 0 && permissions.length === 0) {
+    return true
+  }
+
+  return hasAnyRole(roles) || hasAnyPermission(permissions)
 }
 
 export async function ensureAuthLoaded() {

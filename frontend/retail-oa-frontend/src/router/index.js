@@ -1,12 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layout/MainLayout.vue'
-import { ensureAuthLoaded, getCurrentRole, getDefaultRouteByRole, hasAnyRole, isLoggedIn } from '../utils/auth'
+import { canAccess, ensureAuthLoaded, getCurrentRole, getDefaultRouteByRole, isLoggedIn } from '../utils/auth'
 
 import DashboardView from '../views/dashboard/DashboardView.vue'
 import ProductView from '../views/product/ProductView.vue'
 import SupplierView from '../views/supplier/SupplierView.vue'
 import OrderView from '../views/order/OrderView.vue'
 import InventoryView from '../views/inventory/InventoryView.vue'
+import SalesView from '../views/sales/SalesView.vue'
+import AttendanceView from '../views/attendance/AttendanceView.vue'
 import UserView from '../views/user/UserView.vue'
 import LoginView from '../views/auth/LoginView.vue'
 
@@ -37,7 +39,8 @@ const routes = [
         name: 'Products',
         component: ProductView,
         meta: {
-          roles: ['ADMIN', 'MANAGER', 'STAFF']
+          roles: ['ADMIN', 'MANAGER', 'STAFF'],
+          permissions: ['MANAGE_PRODUCTS']
         }
       },
       {
@@ -45,7 +48,8 @@ const routes = [
         name: 'Suppliers',
         component: SupplierView,
         meta: {
-          roles: ['ADMIN', 'MANAGER']
+          roles: ['ADMIN', 'MANAGER'],
+          permissions: ['MANAGE_SUPPLIERS']
         }
       },
       {
@@ -53,7 +57,8 @@ const routes = [
         name: 'Orders',
         component: OrderView,
         meta: {
-          roles: ['ADMIN', 'MANAGER']
+          roles: ['ADMIN', 'MANAGER'],
+          permissions: ['MANAGE_ORDERS']
         }
       },
       {
@@ -61,7 +66,26 @@ const routes = [
         name: 'Inventory',
         component: InventoryView,
         meta: {
-          roles: ['ADMIN', 'MANAGER', 'STAFF']
+          roles: ['ADMIN', 'MANAGER', 'STAFF'],
+          permissions: ['MANAGE_INVENTORY']
+        }
+      },
+      {
+        path: 'sales',
+        name: 'Sales',
+        component: SalesView,
+        meta: {
+          roles: ['ADMIN', 'MANAGER'],
+          permissions: ['VIEW_SALES', 'MANAGE_SALES', 'MANAGE_POS']
+        }
+      },
+      {
+        path: 'attendance',
+        name: 'Attendance',
+        component: AttendanceView,
+        meta: {
+          roles: ['ADMIN', 'MANAGER', 'STAFF'],
+          permissions: ['VIEW_ATTENDANCE', 'MANAGE_ATTENDANCE', 'APPROVE_LEAVE']
         }
       },
       {
@@ -69,7 +93,8 @@ const routes = [
         name: 'Users',
         component: UserView,
         meta: {
-          roles: ['ADMIN']
+          roles: ['ADMIN'],
+          permissions: ['MANAGE_USERS']
         }
       }
     ]
@@ -101,7 +126,7 @@ router.beforeEach(async (to) => {
     }
   }
 
-  if (!hasAnyRole(to.meta.roles || [])) {
+  if (!canAccess(to.meta.roles || [], to.meta.permissions || [])) {
     return getDefaultRouteByRole(user.role)
   }
 

@@ -8,8 +8,10 @@ package com.retail.oa.repository;
  **/
 
 import com.retail.oa.entity.Product;
+import com.retail.oa.entity.ProductStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -24,4 +26,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByBarcode(String barcode);
 
     boolean existsByBarcode(String barcode);
+
+    List<Product> findByStatus(ProductStatus status);
+
+    List<Product> findByStatusAndStockGreaterThan(ProductStatus status, Integer stock);
 }

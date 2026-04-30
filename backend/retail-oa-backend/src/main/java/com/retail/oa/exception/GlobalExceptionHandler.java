@@ -78,6 +78,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handles other business rule violations.
+     */
+    @ExceptionHandler(InvalidOperationException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidOperationException(InvalidOperationException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * Handles supplier-not-found errors.
      */
     @ExceptionHandler(SupplierNotFoundException.class)
