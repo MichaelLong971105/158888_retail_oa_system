@@ -39,6 +39,7 @@ const routes = [
         name: 'Products',
         component: ProductView,
         meta: {
+          // Route metadata mirrors backend authorities so hidden navigation cannot bypass API security.
           roles: ['ADMIN', 'MANAGER', 'STAFF'],
           permissions: ['MANAGE_PRODUCTS']
         }
@@ -118,6 +119,7 @@ router.beforeEach(async (to) => {
   const user = await ensureAuthLoaded()
 
   if (!user) {
+    // Preserve the requested page so a successful login can send the user back there.
     return {
       path: '/login',
       query: {
@@ -126,7 +128,9 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // A broad role or one explicit module permission is enough for access.
   if (!canAccess(to.meta.roles || [], to.meta.permissions || [])) {
+    // Unauthorized users land on their normal home page instead of seeing a blank route.
     return getDefaultRouteByRole(user.role)
   }
 

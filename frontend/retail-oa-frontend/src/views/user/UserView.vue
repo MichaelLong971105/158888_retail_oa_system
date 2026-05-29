@@ -193,6 +193,7 @@ const submitForm = async () => {
     return
   }
 
+  // Blank passwords are meaningful during edits: they tell the backend to keep the existing hash.
   const payload = {
     username: form.username.trim(),
     email: form.email.trim(),

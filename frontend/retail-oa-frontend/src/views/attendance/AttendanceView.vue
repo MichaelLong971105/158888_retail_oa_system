@@ -630,6 +630,7 @@ function resetManualPunchForm() {
 }
 
 async function loadBaseOptions() {
+  // Base options drive multiple tabs, so load them once before the page-specific requests run.
   const [employeesResponse, approversResponse] = await Promise.all([
     getAttendanceEmployees(),
     getAttendanceApprovers()
@@ -639,6 +640,7 @@ async function loadBaseOptions() {
   approverOptions.value = approversResponse.data || []
 
   if (!selectedEmployeeId.value) {
+    // Managers start with the first staff member; staff users normally only receive themselves.
     selectedEmployeeId.value = employeeOptions.value[0]?.id || authState.user?.id || null
   }
 
@@ -659,6 +661,7 @@ async function loadScheduleAndSummary() {
 
   scheduleLoading.value = true
   try {
+    // Schedule rows and calculated totals are fetched together so the week view stays consistent.
     const [scheduleResponse, summaryResponse] = await Promise.all([
       getWeeklySchedule({
         employeeId: selectedEmployeeId.value,
@@ -671,6 +674,7 @@ async function loadScheduleAndSummary() {
     ])
 
     const scheduleMap = new Map((scheduleResponse.data || []).map(item => [item.workDate, item]))
+    // Merge saved rows onto a full Monday-Sunday skeleton so empty days remain editable.
     scheduleRows.value = createEmptyScheduleRows(selectedWeek.value).map(row => {
       const saved = scheduleMap.get(row.workDate)
       if (!saved) {

@@ -13,6 +13,7 @@ function loadStoredUser() {
   try {
     return JSON.parse(raw)
   } catch (error) {
+    // Corrupt cached auth data should not trap the app in an invalid logged-in state.
     localStorage.removeItem(STORAGE_KEY)
     return null
   }
@@ -27,6 +28,7 @@ export function setCurrentUser(user) {
   authState.user = user
   authState.initialized = true
 
+  // Keep the UI responsive after reloads; the session is revalidated by ensureAuthLoaded().
   if (user) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
   } else {
@@ -73,6 +75,7 @@ export function canAccess(roles = [], permissions = []) {
     return true
   }
 
+  // A role or an explicitly granted permission is enough to unlock a module.
   return hasAnyRole(roles) || hasAnyPermission(permissions)
 }
 
@@ -86,6 +89,7 @@ export async function ensureAuthLoaded() {
   }
 
   try {
+    // Local storage is only a fast hint; the backend session is still the source of truth.
     const response = await getCurrentUser()
     setCurrentUser(response.data)
     return response.data
