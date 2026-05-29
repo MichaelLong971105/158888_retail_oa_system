@@ -1,12 +1,5 @@
 package com.retail.oa.entity;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-07 22:12
- **/
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

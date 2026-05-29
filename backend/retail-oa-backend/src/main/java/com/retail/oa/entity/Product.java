@@ -1,12 +1,5 @@
 package com.retail.oa.entity;
 
-/**
- * @program: retail-oa-backend
- * @description: product entity
- * @author: MichaelLong
- * @create: 2026-03-14 22:30
- **/
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

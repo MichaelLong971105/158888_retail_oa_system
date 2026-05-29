@@ -70,6 +70,7 @@ public class AttendanceService {
         ensureCanManageAttendance(operator);
 
         User employee = getUserById(request.getEmployeeId());
+        // Scheduling is intentionally limited to staff accounts; managers approve and review instead.
         if (employee.getRole() != UserRole.STAFF) {
             throw new InvalidOperationException("Only staff accounts can be scheduled in the attendance module");
         }
@@ -158,6 +159,7 @@ public class AttendanceService {
             throw new InvalidOperationException("Only pending leave requests can be approved");
         }
 
+        // Once leave is approved, the roster should not still expect that employee to work the same time.
         ensureNoScheduleConflictForApprovedLeave(
                 leaveRequest.getApplicant().getId(),
                 leaveRequest.getStartTime(),
@@ -247,6 +249,7 @@ public class AttendanceService {
                 weekStartDateTime
         );
 
+        // Payable hours combine real punch time with approved leave that overlaps scheduled work.
         long scheduledMinutes = schedules.stream()
                 .filter(schedule -> schedule.getShiftType() == ShiftType.WORK)
                 .mapToLong(this::calculateScheduledMinutes)
@@ -405,6 +408,7 @@ public class AttendanceService {
     }
 
     private void ensureNoLeaveOverlap(Long applicantId, LocalDateTime startTime, LocalDateTime endTime) {
+        // Rejected and cancelled leave no longer reserve time, but pending approvals still block duplicates.
         List<LeaveRequestStatus> blockingStatuses = List.of(LeaveRequestStatus.PENDING, LeaveRequestStatus.APPROVED);
         boolean hasOverlap = !leaveRequestRepository.findByApplicantIdAndStatusInAndStartTimeLessThanAndEndTimeGreaterThan(
                 applicantId,
@@ -462,6 +466,7 @@ public class AttendanceService {
         long totalMinutes = 0L;
         LocalDateTime currentClockIn = null;
 
+        // Pair each clock-out with the most recent unmatched clock-in; dangling punches are ignored.
         for (AttendancePunchRecord punch : punches) {
             if (punch.getPunchType() == AttendancePunchType.CLOCK_IN) {
                 currentClockIn = punch.getPunchTime();
@@ -480,6 +485,7 @@ public class AttendanceService {
     private long calculateApprovedLeaveMinutes(List<WorkSchedule> schedules, List<LeaveRequest> approvedLeaves) {
         long totalMinutes = 0L;
 
+        // Only the overlap between approved leave and scheduled work contributes to payable leave hours.
         for (WorkSchedule schedule : schedules) {
             if (schedule.getShiftType() != ShiftType.WORK || schedule.getStartTime() == null || schedule.getEndTime() == null) {
                 continue;
@@ -516,6 +522,7 @@ public class AttendanceService {
             return operator;
         }
 
+        // Staff can view their own records unless they were explicitly delegated broader attendance access.
         if (operator.getRole() == UserRole.STAFF && !operator.getId().equals(requestedEmployeeId)
                 && !operator.getAdditionalPermissions().contains(UserPermission.VIEW_ATTENDANCE)
                 && !operator.getAdditionalPermissions().contains(UserPermission.MANAGE_ATTENDANCE)) {

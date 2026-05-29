@@ -1,18 +1,12 @@
 package com.retail.oa.service;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:35
- **/
-
 import com.retail.oa.dto.OrderItemRequest;
 import com.retail.oa.dto.OrderItemResponse;
 import com.retail.oa.dto.OrderRequest;
 import com.retail.oa.dto.OrderResponse;
 import com.retail.oa.entity.*;
 import com.retail.oa.exception.InsufficientStockException;
+import com.retail.oa.exception.InvalidOperationException;
 import com.retail.oa.exception.ResourceNotFoundException;
 import com.retail.oa.exception.SupplierNotFoundException;
 import com.retail.oa.repository.InventoryLogRepository;
@@ -57,7 +51,7 @@ public class OrderService {
     public OrderResponse createOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
-        order.setStatus("PENDING");
+        order.setStatus(OrderStatus.PENDING);
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -70,6 +64,12 @@ public class OrderService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Product not found with id: " + itemRequest.getProductId()
                     ));
+
+            if (product.getSupplier() == null || !supplier.getId().equals(product.getSupplier().getId())) {
+                throw new InvalidOperationException(
+                        "Product " + product.getName() + " does not belong to supplier " + supplier.getName()
+                );
+            }
 
             Integer quantity = itemRequest.getQuantity();
 
@@ -108,13 +108,10 @@ public class OrderService {
         if (status == null || status.isBlank()) {
             orders = orderRepository.findAll();
         } else {
-            String upperStatus = status.toUpperCase();
-
-            if (!isValidStatus(upperStatus)) {
-                throw new InsufficientStockException("Invalid order status: " + status);
-            }
-
-            orders = orderRepository.findByStatus(upperStatus);
+            OrderStatus parsedStatus = parseStatus(status);
+            orders = parsedStatus == OrderStatus.RECEIVED
+                    ? orderRepository.findByStatusIn(receivedStatuses())
+                    : orderRepository.findByStatus(parsedStatus);
         }
 
         List<OrderResponse> responses = new ArrayList<>();
@@ -148,7 +145,7 @@ public class OrderService {
         response.setSupplierName(order.getSupplier().getName());
         response.setTotalAmount(order.getTotalAmount());
         response.setCreatedAt(order.getCreatedAt());
-        response.setStatus(order.getStatus());
+        response.setStatus(toApiStatus(order.getStatus()).name());
 
         List<OrderItemResponse> itemResponses = new ArrayList<>();
 
@@ -182,31 +179,40 @@ public class OrderService {
     /**
      * Validates whether the given status belongs to the allowed purchase order states.
      */
-    private boolean isValidStatus(String status) {
-        if (status == null) {
-            return false;
+    private OrderStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
+            throw new InvalidOperationException("Order status cannot be blank");
         }
 
-        String upperStatus = status.toUpperCase();
-        return upperStatus.equals("PENDING")
-                || upperStatus.equals("RECEIVED")
-                || upperStatus.equals("CANCELLED");
+        try {
+            return OrderStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidOperationException("Invalid order status: " + status);
+        }
+    }
+
+    /**
+     * Treats older COMPLETED purchase orders as RECEIVED in the public API.
+     */
+    private OrderStatus toApiStatus(OrderStatus status) {
+        if (status == OrderStatus.COMPLETED) {
+            return OrderStatus.RECEIVED;
+        }
+
+        return status;
+    }
+
+    private List<OrderStatus> receivedStatuses() {
+        // COMPLETED is a legacy database value from before the purchase order workflow used RECEIVED.
+        return List.of(OrderStatus.RECEIVED, OrderStatus.COMPLETED);
     }
 
     /**
      * Validates one-way order status transitions.
      */
-    private boolean isValidStatusTransition(String currentStatus, String newStatus) {
-        if ("PENDING".equals(currentStatus)) {
-            return "RECEIVED".equals(newStatus) || "CANCELLED".equals(newStatus);
-        }
-
-        if ("RECEIVED".equals(currentStatus)) {
-            return false;
-        }
-
-        if ("CANCELLED".equals(currentStatus)) {
-            return false;
+    private boolean isValidStatusTransition(OrderStatus currentStatus, OrderStatus newStatus) {
+        if (currentStatus == OrderStatus.PENDING) {
+            return newStatus == OrderStatus.RECEIVED || newStatus == OrderStatus.CANCELLED;
         }
 
         return false;
@@ -240,28 +246,24 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
 
-        if (!isValidStatus(status)) {
-            throw new InsufficientStockException("Invalid order status: " + status);
-        }
-
-        String newStatus = status.toUpperCase();
-        String currentStatus = order.getStatus();
+        OrderStatus newStatus = parseStatus(status);
+        OrderStatus currentStatus = order.getStatus();
 
         if (currentStatus == null) {
-            currentStatus = "PENDING";
+            currentStatus = OrderStatus.PENDING;
         }
 
-        if (currentStatus.equals(newStatus)) {
+        if (currentStatus == newStatus) {
             return convertToOrderResponse(order);
         }
 
         if (!isValidStatusTransition(currentStatus, newStatus)) {
-            throw new InsufficientStockException(
+            throw new InvalidOperationException(
                     "Invalid status transition from " + currentStatus + " to " + newStatus
             );
         }
 
-        if ("RECEIVED".equals(newStatus)) {
+        if (newStatus == OrderStatus.RECEIVED) {
             stockInForReceivedOrder(order);
         }
 
@@ -278,9 +280,9 @@ public class OrderService {
         OrderStatsResponse stats = new OrderStatsResponse();
 
         long totalOrders = orderRepository.count();
-        long pendingOrders = orderRepository.countByStatus("PENDING");
-        long receivedOrders = orderRepository.countByStatus("RECEIVED");
-        long cancelledOrders = orderRepository.countByStatus("CANCELLED");
+        long pendingOrders = orderRepository.countByStatus(OrderStatus.PENDING);
+        long receivedOrders = orderRepository.countByStatusIn(receivedStatuses());
+        long cancelledOrders = orderRepository.countByStatus(OrderStatus.CANCELLED);
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal receivedAmount = BigDecimal.ZERO;
@@ -292,7 +294,7 @@ public class OrderService {
             }
         }
 
-        List<Order> receivedOrderList = orderRepository.findAllByStatus("RECEIVED");
+        List<Order> receivedOrderList = orderRepository.findByStatusIn(receivedStatuses());
         for (Order order : receivedOrderList) {
             if (order.getTotalAmount() != null) {
                 receivedAmount = receivedAmount.add(order.getTotalAmount());

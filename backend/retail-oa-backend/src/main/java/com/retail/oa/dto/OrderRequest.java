@@ -1,12 +1,5 @@
 package com.retail.oa.dto;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-11 13:27
- **/
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

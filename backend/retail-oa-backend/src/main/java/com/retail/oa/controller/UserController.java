@@ -1,12 +1,5 @@
 package com.retail.oa.controller;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:36
- **/
-
 import com.retail.oa.dto.user.UserRequest;
 import com.retail.oa.dto.user.UserResponse;
 import com.retail.oa.service.UserService;

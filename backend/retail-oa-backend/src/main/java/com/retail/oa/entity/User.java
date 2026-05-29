@@ -1,12 +1,5 @@
 package com.retail.oa.entity;
 
-/**
- * @program: retail-oa-backend
- * @description: user entity
- * @author: MichaelLong
- * @create: 2026-03-14 22:28
- **/
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -66,6 +59,7 @@ public class User {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private boolean enabled = true;
 
+    // Extra permissions let small stores grant module access without creating many near-duplicate roles.
     @ElementCollection(fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_permissions", joinColumns = @JoinColumn(name = "user_id"))

@@ -14,6 +14,8 @@ import java.util.List;
  */
 public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
 
+    boolean existsByProductId(Long productId);
+
     @Query("""
             select new com.retail.oa.dto.sale.TopSellingProductResponse(
                 si.product.id,

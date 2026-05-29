@@ -1,17 +1,13 @@
 package com.retail.oa.service;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-17 12:51
- **/
-
 import com.retail.oa.dto.supplier.SupplierRequest;
 import com.retail.oa.dto.supplier.SupplierResponse;
 import com.retail.oa.entity.Supplier;
 import com.retail.oa.exception.DuplicateSupplierException;
+import com.retail.oa.exception.InvalidOperationException;
 import com.retail.oa.exception.SupplierNotFoundException;
+import com.retail.oa.repository.OrderRepository;
+import com.retail.oa.repository.ProductRepository;
 import com.retail.oa.repository.SupplierRepository;
 import org.springframework.stereotype.Service;
 
@@ -25,9 +21,15 @@ import java.util.stream.Collectors;
 public class SupplierService {
 
     private final SupplierRepository supplierRepository;
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
 
-    public SupplierService(SupplierRepository supplierRepository) {
+    public SupplierService(SupplierRepository supplierRepository,
+                           ProductRepository productRepository,
+                           OrderRepository orderRepository) {
         this.supplierRepository = supplierRepository;
+        this.productRepository = productRepository;
+        this.orderRepository = orderRepository;
     }
 
     /**
@@ -87,6 +89,14 @@ public class SupplierService {
     public void deleteSupplier(Long id) {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new SupplierNotFoundException("Supplier not found with id: " + id));
+
+        if (productRepository.existsBySupplierId(id)) {
+            throw new InvalidOperationException("Supplier cannot be deleted because it is linked to products");
+        }
+
+        if (orderRepository.existsBySupplierId(id)) {
+            throw new InvalidOperationException("Supplier cannot be deleted because it is linked to orders");
+        }
 
         supplierRepository.delete(supplier);
     }

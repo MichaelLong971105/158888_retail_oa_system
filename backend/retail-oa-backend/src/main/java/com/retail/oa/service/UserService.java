@@ -1,12 +1,5 @@
 package com.retail.oa.service;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:34
- **/
-
 import com.retail.oa.dto.user.UserRequest;
 import com.retail.oa.dto.user.UserResponse;
 import com.retail.oa.entity.User;
@@ -119,6 +112,7 @@ public class UserService {
     }
 
     private void ensureAdminSafeguards(User existingUser, UserRequest request) {
+        // Prevent the system from losing the last active administrator through edits.
         boolean removingOnlyAdmin = existingUser.getRole() == UserRole.ADMIN
                 && existingUser.isEnabled()
                 && userRepository.countByRoleAndEnabledTrue(UserRole.ADMIN) <= 1
@@ -139,6 +133,7 @@ public class UserService {
         );
 
         if (creating || (request.getPassword() != null && !request.getPassword().isBlank())) {
+            // Blank passwords on edit mean "keep the current password".
             user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         }
     }

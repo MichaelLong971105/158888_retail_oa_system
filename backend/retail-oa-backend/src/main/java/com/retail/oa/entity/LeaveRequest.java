@@ -39,6 +39,7 @@ public class LeaveRequest {
     @JoinColumn(name = "approver_id")
     private User approver;
 
+    // A request may start unassigned so any manager can pick it up from the approval queue.
     @Enumerated(EnumType.STRING)
     @Column(name = "leave_type", nullable = false, length = 20)
     private LeaveType leaveType;

@@ -1,12 +1,5 @@
 package com.retail.oa.entity;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-17 12:49
- **/
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.Getter;

@@ -1,11 +1,5 @@
 package com.retail.oa.entity;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:31
- **/
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonBackReference;

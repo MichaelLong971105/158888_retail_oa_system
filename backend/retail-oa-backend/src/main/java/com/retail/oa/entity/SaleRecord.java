@@ -41,6 +41,7 @@ public class SaleRecord {
     @Column(name = "external_sale_id", length = 100)
     private String externalSaleId;
 
+    // Marks whether a sale came from the OA UI, a future POS integration, or test data.
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private SaleSource source;
@@ -49,6 +50,7 @@ public class SaleRecord {
     @JoinColumn(name = "cashier_id")
     private User cashier;
 
+    // Keep the display name even if the linked user is later disabled or the POS sends only text.
     @Column(name = "cashier_name", nullable = false, length = 100)
     private String cashierName;
 

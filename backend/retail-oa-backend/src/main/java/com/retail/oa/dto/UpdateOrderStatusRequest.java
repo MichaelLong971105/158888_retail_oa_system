@@ -1,11 +1,5 @@
 package com.retail.oa.dto;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-11 18:48
- **/
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
