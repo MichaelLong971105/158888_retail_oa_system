@@ -1,6 +1,7 @@
 CREATE DATABASE IF NOT EXISTS retail_oa;
 USE retail_oa;
 
+-- Supplier and product tables are the master data behind procurement and inventory.
 CREATE TABLE suppliers (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -30,6 +31,7 @@ CREATE TABLE user_permissions (
     CONSTRAINT fk_user_permissions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Purchase orders represent inbound stock; sales records represent outbound stock.
 CREATE TABLE products (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -53,7 +55,7 @@ CREATE TABLE products (
 CREATE TABLE orders (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_number VARCHAR(50) NOT NULL UNIQUE,
-    status VARCHAR(30) NOT NULL,
+    status ENUM('PENDING','RECEIVED','CANCELLED') NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     supplier_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

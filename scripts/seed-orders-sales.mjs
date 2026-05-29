@@ -7,6 +7,7 @@ const SUPPLIER_TARGET = Number(process.env.SEED_SUPPLIER_TARGET || 4)
 const PRODUCT_TARGET = Number(process.env.SEED_PRODUCT_TARGET || 10)
 const RUN_TAG = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
 
+// Small cookie-aware client so the seed script can exercise the real session-based API.
 class ApiClient {
   constructor(baseUrl) {
     this.baseUrl = baseUrl
@@ -85,6 +86,7 @@ function randomSaleTime(index) {
 }
 
 async function login() {
+  // Try the current bootstrap account first, then fall back to an older local demo account.
   const candidates = [
     { username: USERNAME, password: PASSWORD },
     { username: 'admin1', password: '123456' }
@@ -181,6 +183,7 @@ async function ensureProducts(suppliers) {
 }
 
 function groupProductsBySupplier(products) {
+  // Purchase orders can only include products from the selected supplier.
   return products.reduce((map, product) => {
     const key = product.supplierId || 'unassigned'
     if (!map.has(key)) {
@@ -195,6 +198,7 @@ async function createOrders(products, suppliers) {
   const groupedProducts = groupProductsBySupplier(products)
   const created = []
 
+  // Orders are grouped by supplier so the seeded data follows the same rule a buyer would use.
   for (let i = 0; i < ORDER_COUNT; i++) {
     const supplier = pickRandom(suppliers)
     const availableProducts = groupedProducts.get(supplier.id) || products
@@ -213,6 +217,7 @@ async function createOrders(products, suppliers) {
     const statusRoll = Math.random()
     let finalStatus = 'PENDING'
 
+    // Keep a mix of terminal and pending orders so dashboard stats show meaningful values.
     if (statusRoll < 0.65) {
       finalStatus = 'RECEIVED'
     } else if (statusRoll < 0.85) {
@@ -239,6 +244,7 @@ async function createOrders(products, suppliers) {
 async function createSales(products, cashier) {
   const created = []
 
+  // Sales are pushed through the API to exercise stock deduction and sales analytics together.
   for (let i = 0; i < SALES_COUNT; i++) {
     const selectedProducts = pickDistinct(products, randomInt(1, Math.min(4, products.length)))
     const sale = await client.request('/sales', {

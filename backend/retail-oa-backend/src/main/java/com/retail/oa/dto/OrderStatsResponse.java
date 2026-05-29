@@ -6,13 +6,6 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 /**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-11 21:45
- **/
-
-/**
  * Response DTO for order statistics.
  */
 @Getter

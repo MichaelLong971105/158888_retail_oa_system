@@ -2,12 +2,41 @@
   font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #303133;
-  background: #f5f7fa;
+  color: #172033;
+  background: #eef3f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --app-bg: #eef3f8;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f7fafc;
+  --app-sidebar: #102032;
+  --app-sidebar-strong: #0b1725;
+  --app-text: #172033;
+  --app-muted: #667085;
+  --app-border: #dce5ef;
+  --app-primary: #2563eb;
+  --app-primary-strong: #1d4ed8;
+  --app-accent: #10b981;
+  --app-warning: #f59e0b;
+  --app-danger: #ef4444;
+  --app-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --app-shadow-soft: 0 10px 28px rgba(15, 23, 42, 0.06);
+  --app-radius: 8px;
+
+  --el-color-primary: var(--app-primary);
+  --el-color-primary-light-3: #4f83f1;
+  --el-color-primary-light-5: #8db2f7;
+  --el-color-primary-light-7: #c8dafb;
+  --el-color-primary-light-9: #eaf1ff;
+  --el-color-primary-dark-2: var(--app-primary-strong);
+  --el-border-radius-base: 8px;
+  --el-border-color: var(--app-border);
+  --el-text-color-primary: var(--app-text);
+  --el-text-color-regular: #344054;
+  --el-text-color-secondary: var(--app-muted);
 }
 
 * {
@@ -22,7 +51,9 @@ body,
 }
 
 body {
-  background: #f5f7fa;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 32rem),
+    linear-gradient(180deg, #f7fafc 0%, var(--app-bg) 48%, #e7eef6 100%);
 }
 
 button,
@@ -30,4 +61,156 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+button,
+[role="button"],
+.el-button,
+.el-menu-item,
+.el-tabs__item {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+.el-card {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.el-card__header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf2f7;
+  color: #111827;
+  font-weight: 700;
+}
+
+.el-card__body {
+  padding: 18px;
+}
+
+.el-button {
+  min-height: 40px;
+  border-radius: 8px;
+  font-weight: 650;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.el-button:not(.is-link):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.12);
+}
+
+.el-button.is-link {
+  min-height: 32px;
+  padding-inline: 4px;
+  font-weight: 650;
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner,
+.el-input-number .el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #d7e0eb inset;
+}
+
+.el-input__wrapper:hover,
+.el-select__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px #9db4ce inset;
+}
+
+.el-table {
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-header-text-color: #344054;
+  --el-table-row-hover-bg-color: #f1f6ff;
+  border-radius: 8px;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 750;
+}
+
+.el-table .cell {
+  line-height: 1.45;
+}
+
+.el-tag {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.el-dialog,
+.el-drawer {
+  border-radius: 10px;
+}
+
+.el-dialog__header,
+.el-drawer__header {
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf2f7;
+  font-weight: 800;
+}
+
+.el-dialog__footer {
+  padding-top: 12px;
+  border-top: 1px solid #edf2f7;
+}
+
+.page-container,
+.attendance-page {
+  width: 100%;
+}
+
+.page-header {
+  padding: 4px 2px 2px;
+}
+
+.page-header h3 {
+  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.page-header p {
+  max-width: 720px;
+  color: var(--app-muted);
+}
+
+.toolbar,
+.toolbar-inline,
+.header-actions {
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .el-main {
+    --el-main-padding: 14px;
+  }
+
+  .el-card__body {
+    padding: 14px;
+  }
+
+  .page-header h3 {
+    font-size: 21px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

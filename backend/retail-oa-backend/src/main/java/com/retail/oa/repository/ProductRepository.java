@@ -1,12 +1,5 @@
 package com.retail.oa.repository;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:33
- **/
-
 import com.retail.oa.entity.Product;
 import com.retail.oa.entity.ProductStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -30,4 +23,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findByStatus(ProductStatus status);
 
     List<Product> findByStatusAndStockGreaterThan(ProductStatus status, Integer stock);
+
+    boolean existsBySupplierId(Long supplierId);
 }

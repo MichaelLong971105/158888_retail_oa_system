@@ -77,6 +77,7 @@ public class SalesService {
 
     @Transactional
     public List<SaleRecordResponse> generateMockSales(MockSalesRequest request) {
+        // Mock sales should exercise the same stock movement path as real sales so dashboards stay honest.
         List<Product> availableProducts = productRepository.findByStatusAndStockGreaterThan(ProductStatus.ACTIVE, 0);
         if (availableProducts.isEmpty()) {
             throw new InvalidOperationException("At least one active product with stock is required to generate mock sales");
@@ -133,6 +134,7 @@ public class SalesService {
     public List<SaleRecordResponse> getSales(LocalDate startDate, LocalDate endDate, SaleSource source, Long cashierId) {
         List<SaleRecord> records;
 
+        // Prefer repository-level filters for the primary selector, then apply optional cross-filters in memory.
         if (source != null) {
             records = saleRecordRepository.findBySourceOrderBySaleTimeDesc(source);
         } else if (cashierId != null) {
@@ -205,6 +207,7 @@ public class SalesService {
         SaleSource source = request.getSource() == null ? defaultSource : request.getSource();
         LocalDateTime saleTime = request.getSaleTime() == null ? LocalDateTime.now() : request.getSaleTime();
 
+        // POS payloads may carry only a cashier name, while manual entries usually link to a system user.
         User cashier = resolveCashier(request.getCashierUserId());
         String cashierName = resolveCashierName(request.getCashierName(), cashier);
 
@@ -248,6 +251,7 @@ public class SalesService {
             totalAmount = totalAmount.add(lineAmount);
 
             if (product != null) {
+                // Unknown external products are recorded for reporting, but only matched products affect stock.
                 registerInventoryOut(product, quantity, saleRecord.getSaleNumber(), saleTime);
             }
         }
@@ -269,6 +273,7 @@ public class SalesService {
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found with sku: " + itemRequest.getSku()));
         }
 
+        // Selling discontinued or inactive stock would make inventory counts look valid when operations should stop.
         if (product != null && product.getStatus() != ProductStatus.ACTIVE) {
             throw new InvalidOperationException("Only active products can be sold: " + product.getName());
         }
@@ -320,6 +325,7 @@ public class SalesService {
             throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
         }
 
+        // Sales are the outbound inventory path; every stock deduction gets a matching audit log.
         product.setStock(product.getStock() - quantity);
         productRepository.save(product);
 

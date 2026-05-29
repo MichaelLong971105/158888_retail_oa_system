@@ -45,6 +45,7 @@ public class AttendancePunchRecord {
     @Column(name = "punch_time", nullable = false)
     private LocalDateTime punchTime;
 
+    // Makes punch ingestion idempotent when a time clock retries delivery.
     @Column(name = "external_record_id", unique = true, length = 100)
     private String externalRecordId;
 

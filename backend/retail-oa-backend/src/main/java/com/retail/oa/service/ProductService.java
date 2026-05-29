@@ -1,12 +1,5 @@
 package com.retail.oa.service;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:35
- **/
-
 import com.retail.oa.dto.product.ProductRequest;
 import com.retail.oa.dto.product.ProductResponse;
 import com.retail.oa.entity.InventoryLog;
@@ -14,10 +7,13 @@ import com.retail.oa.entity.Product;
 import com.retail.oa.entity.Supplier;
 import com.retail.oa.exception.DuplicateResourceException;
 import com.retail.oa.exception.InsufficientStockException;
+import com.retail.oa.exception.InvalidOperationException;
 import com.retail.oa.exception.ResourceNotFoundException;
 import com.retail.oa.exception.SupplierNotFoundException;
 import com.retail.oa.repository.InventoryLogRepository;
+import com.retail.oa.repository.OrderItemRepository;
 import com.retail.oa.repository.ProductRepository;
+import com.retail.oa.repository.SaleItemRepository;
 import com.retail.oa.repository.SupplierRepository;
 import org.springframework.stereotype.Service;
 
@@ -33,13 +29,19 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final InventoryLogRepository inventoryLogRepository;
     private final SupplierRepository supplierRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final SaleItemRepository saleItemRepository;
 
     public ProductService(ProductRepository productRepository,
                           InventoryLogRepository inventoryLogRepository,
-                          SupplierRepository supplierRepository) {
+                          SupplierRepository supplierRepository,
+                          OrderItemRepository orderItemRepository,
+                          SaleItemRepository saleItemRepository) {
         this.productRepository = productRepository;
         this.inventoryLogRepository = inventoryLogRepository;
         this.supplierRepository = supplierRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.saleItemRepository = saleItemRepository;
     }
 
     /**
@@ -87,7 +89,22 @@ public class ProductService {
      * Deletes a product by id.
      */
     public void deleteProduct(Long id) {
-        productRepository.delete(getProductEntityById(id));
+        Product product = getProductEntityById(id);
+
+        // Products are master data referenced by operational records, so delete only unused products.
+        if (orderItemRepository.existsByProductId(id)) {
+            throw new InvalidOperationException("Product cannot be deleted because it is linked to purchase orders");
+        }
+
+        if (saleItemRepository.existsByProductId(id)) {
+            throw new InvalidOperationException("Product cannot be deleted because it is linked to sales records");
+        }
+
+        if (inventoryLogRepository.existsByProductId(id)) {
+            throw new InvalidOperationException("Product cannot be deleted because it has inventory logs");
+        }
+
+        productRepository.delete(product);
     }
 
     /**
@@ -140,6 +157,7 @@ public class ProductService {
     }
 
     private void validateUniqueFields(ProductRequest request, Long currentProductId) {
+        // During updates, the current product may keep its own SKU or barcode without counting as a duplicate.
         Product productBySku = productRepository.findBySku(request.getSku().trim()).orElse(null);
         if (productBySku != null && !productBySku.getId().equals(currentProductId)) {
             throw new DuplicateResourceException("SKU already exists");

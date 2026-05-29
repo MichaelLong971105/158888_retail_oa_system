@@ -1,12 +1,5 @@
 package com.retail.oa.exception;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-04-04 01:18
- **/
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -91,16 +84,20 @@ public class GlobalExceptionHandler {
      * Handles supplier-not-found errors.
      */
     @ExceptionHandler(SupplierNotFoundException.class)
-    public ResponseEntity<String> handleSupplierNotFoundException(SupplierNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    public ResponseEntity<Map<String, String>> handleSupplierNotFoundException(SupplierNotFoundException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     /**
      * Handles duplicate supplier errors.
      */
     @ExceptionHandler(DuplicateSupplierException.class)
-    public ResponseEntity<String> handleDuplicateSupplierException(DuplicateSupplierException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    public ResponseEntity<Map<String, String>> handleDuplicateSupplierException(DuplicateSupplierException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     /**

@@ -1,12 +1,5 @@
 package com.retail.oa.config;
 
-/**
- * @program: retail-oa-backend
- * @description:
- * @author: MichaelLong
- * @create: 2026-03-14 22:46
- **/
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,6 +44,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/me", "/auth/logout").authenticated()
+                        // Roles provide the normal path through the UI; explicit permissions let an admin delegate
+                        // one module without promoting the user to a broader role.
                         .requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN", "MANAGE_USERS")
                         .requestMatchers("/suppliers/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_SUPPLIERS")
                         .requestMatchers("/orders/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MANAGER", "MANAGE_ORDERS")
@@ -89,6 +84,7 @@ public class SecurityConfig {
                             response.getWriter().write("{\"error\":\"Forbidden\"}");
                         })
                 )
+                // The Vue client performs a JSON login and keeps the Spring session cookie.
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
 
@@ -101,6 +97,7 @@ public class SecurityConfig {
                 .map(user -> {
                     List<SimpleGrantedAuthority> authorities = new ArrayList<>();
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+                    // Spring Security treats roles and permissions as the same authority collection here.
                     user.getAdditionalPermissions()
                             .forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.name())));
 
@@ -130,6 +127,7 @@ public class SecurityConfig {
                 }
 
                 if (encodedPassword.equals(rawPassword.toString())) {
+                    // Kept for older local seed data that may still contain plain-text passwords.
                     return true;
                 }
 

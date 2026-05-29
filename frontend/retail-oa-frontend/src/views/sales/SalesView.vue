@@ -274,6 +274,7 @@ const syncItemPrice = (item) => {
     return
   }
 
+  // Default to the product master price, while still allowing the cashier to override it.
   item.unitPrice = Number(product.price || 0)
 }
 
@@ -311,6 +312,7 @@ const loadSales = async () => {
 
   try {
     const params = {}
+    // Keep filters out of the query string unless the user has actively chosen them.
     if (dateRange.value?.length === 2) {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
@@ -346,6 +348,7 @@ const submitSale = async () => {
     return
   }
 
+  // Manual sales share the same backend ingestion path as POS sales, so stock checks happen server-side.
   const hasInvalidItem = saleForm.items.some(item => !item.productId || !item.quantity || !item.unitPrice)
   if (hasInvalidItem) {
     ElMessage.warning('Please complete all sale items')

@@ -12,27 +12,31 @@
 
     <el-row :gutter="16" class="summary-row">
       <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="summary-card">
+        <el-card class="summary-card accent-blue">
           <div class="summary-label">Products</div>
           <div class="summary-value">{{ summary.totalProducts }}</div>
+          <div class="summary-meta">Active master data</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="summary-card">
+        <el-card class="summary-card accent-cyan">
           <div class="summary-label">Suppliers</div>
           <div class="summary-value">{{ displayValue(summary.totalSuppliers) }}</div>
+          <div class="summary-meta">Procurement network</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="summary-card">
+        <el-card class="summary-card accent-violet">
           <div class="summary-label">Users</div>
           <div class="summary-value">{{ displayValue(summary.totalUsers) }}</div>
+          <div class="summary-meta">System accounts</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
-        <el-card class="summary-card">
+        <el-card class="summary-card accent-green">
           <div class="summary-label">Orders</div>
           <div class="summary-value">{{ displayValue(orderStats.totalOrders) }}</div>
+          <div class="summary-meta">Purchase workflow</div>
         </el-card>
       </el-col>
     </el-row>
@@ -51,18 +55,21 @@
               <div class="metric-box pending">
                 <div class="metric-title">Pending</div>
                 <div class="metric-number">{{ displayValue(orderStats.pendingOrders) }}</div>
+                <div class="metric-caption">Awaiting action</div>
               </div>
             </el-col>
             <el-col :span="8">
               <div class="metric-box received">
                 <div class="metric-title">Received</div>
                 <div class="metric-number">{{ displayValue(orderStats.receivedOrders) }}</div>
+                <div class="metric-caption">Completed intake</div>
               </div>
             </el-col>
             <el-col :span="8">
               <div class="metric-box cancelled">
                 <div class="metric-title">Cancelled</div>
                 <div class="metric-number">{{ displayValue(orderStats.cancelledOrders) }}</div>
+                <div class="metric-caption">Stopped flow</div>
               </div>
             </el-col>
           </el-row>
@@ -81,7 +88,7 @@
       </el-col>
 
       <el-col :xs="24" :lg="10">
-        <el-card>
+        <el-card class="inventory-card">
           <template #header>
             <div class="card-header">
               <span>Inventory Snapshot</span>
@@ -96,6 +103,12 @@
             <div class="amount-item danger">
               <span>Low Stock Products</span>
               <strong>{{ summary.lowStockProducts }}</strong>
+            </div>
+          </div>
+          <div class="stock-health">
+            <span>Stock health</span>
+            <div class="health-track">
+              <div class="health-fill" :style="{ width: stockHealthWidth }"></div>
             </div>
           </div>
         </el-card>
@@ -172,7 +185,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAllProducts } from '../../api/product'
 import { getAllSuppliers } from '../../api/supplier'
@@ -199,6 +212,15 @@ const summary = reactive({
   totalUsers: null,
   totalStock: 0,
   lowStockProducts: 0
+})
+
+const stockHealthWidth = computed(() => {
+  if (!summary.totalProducts) {
+    return '0%'
+  }
+
+  const healthyProducts = Math.max(summary.totalProducts - summary.lowStockProducts, 0)
+  return `${Math.round((healthyProducts / summary.totalProducts) * 100)}%`
 })
 
 const formatCurrency = (value, enabled = true) => {
@@ -233,6 +255,8 @@ const loadDashboardData = async () => {
     const productsResponse = await getAllProducts()
     const requests = []
 
+    // Build the dashboard from only the modules the current user is allowed to see.
+    // The response unpacking below must stay in this same order.
     if (canViewSuppliers) {
       requests.push(getAllSuppliers())
     }
@@ -261,6 +285,7 @@ const loadDashboardData = async () => {
     let dashboard = salesDashboard.value
 
     if (canViewSuppliers) {
+      // Responses are read in the same order as the permission-gated request list above.
       suppliers = responses[responseIndex]?.data || []
       responseIndex += 1
     }
@@ -284,6 +309,7 @@ const loadDashboardData = async () => {
     summary.totalProducts = products.length
     summary.totalSuppliers = canViewSuppliers ? suppliers.length : null
     summary.totalUsers = canViewUsers ? users.length : null
+    // Inventory health is derived client-side from product master data to avoid another dashboard endpoint.
     summary.totalStock = products.reduce((total, product) => total + Number(product.stock || 0), 0)
     summary.lowStockProducts = products.filter(product =>
       Number(product.stock || 0) <= Number(product.minStock || 0)
@@ -339,50 +365,94 @@ onMounted(() => {
 }
 
 .summary-card {
-  min-height: 120px;
+  min-height: 136px;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--card-accent, var(--app-primary));
+}
+
+.accent-blue {
+  --card-accent: #2563eb;
+}
+
+.accent-cyan {
+  --card-accent: #0891b2;
+}
+
+.accent-violet {
+  --card-accent: #7c3aed;
+}
+
+.accent-green {
+  --card-accent: #10b981;
 }
 
 .summary-label {
-  color: #909399;
+  color: var(--app-muted);
   font-size: 14px;
+  font-weight: 700;
 }
 
 .summary-value {
-  margin-top: 16px;
+  margin-top: 12px;
   font-size: 32px;
-  font-weight: 700;
-  color: #303133;
+  font-weight: 850;
+  color: #111827;
 }
 
 .summary-value.money {
   font-size: 28px;
 }
 
+.summary-meta {
+  margin-top: 8px;
+  color: #667085;
+  font-size: 13px;
+}
+
 .metric-box {
-  border-radius: 12px;
+  min-height: 126px;
+  border-radius: 8px;
   padding: 16px;
   color: #fff;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
 }
 
 .metric-box.pending {
-  background: linear-gradient(135deg, #e6a23c, #f3c87a);
+  background: linear-gradient(135deg, #b45309, #f59e0b);
 }
 
 .metric-box.received {
-  background: linear-gradient(135deg, #67c23a, #95d475);
+  background: linear-gradient(135deg, #047857, #10b981);
 }
 
 .metric-box.cancelled {
-  background: linear-gradient(135deg, #f56c6c, #f89898);
+  background: linear-gradient(135deg, #b91c1c, #ef4444);
 }
 
 .metric-title {
   font-size: 14px;
+  font-weight: 800;
+  opacity: 0.9;
 }
 
 .metric-number {
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 28px;
+  font-weight: 900;
+}
+
+.metric-caption {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -399,8 +469,9 @@ onMounted(() => {
 }
 
 .amount-item {
-  background: #f5f7fa;
-  border-radius: 12px;
+  background: var(--app-surface-soft);
+  border: 1px solid #e5edf5;
+  border-radius: 8px;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -408,16 +479,43 @@ onMounted(() => {
 }
 
 .amount-item span {
-  color: #606266;
+  color: var(--app-muted);
+  font-weight: 650;
 }
 
 .amount-item strong {
   font-size: 24px;
-  color: #303133;
+  color: #111827;
 }
 
 .amount-item.danger strong {
-  color: #f56c6c;
+  color: var(--app-danger);
+}
+
+.stock-health {
+  margin-top: 18px;
+}
+
+.stock-health span {
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.health-track {
+  height: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #fee2e2;
+}
+
+.health-fill {
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10b981, #22c55e);
+  transition: width 220ms ease;
 }
 
 @media (max-width: 768px) {
