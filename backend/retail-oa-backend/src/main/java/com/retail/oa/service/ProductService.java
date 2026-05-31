@@ -17,7 +17,12 @@ import com.retail.oa.repository.SaleItemRepository;
 import com.retail.oa.repository.SupplierRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -173,12 +178,6 @@ public class ProductService {
     }
 
     private void applyRequest(Product product, ProductRequest request) {
-        Supplier supplier = null;
-        if (request.getSupplierId() != null) {
-            supplier = supplierRepository.findById(request.getSupplierId())
-                    .orElseThrow(() -> new SupplierNotFoundException("Supplier not found with id: " + request.getSupplierId()));
-        }
-
         product.setName(request.getName().trim());
         product.setSku(request.getSku().trim());
         product.setBarcode(normalizeNullable(request.getBarcode()));
@@ -191,7 +190,42 @@ public class ProductService {
         product.setMinStock(request.getMinStock());
         product.setStatus(request.getStatus());
         product.setDescription(normalizeNullable(request.getDescription()));
-        product.setSupplier(supplier);
+        product.setSuppliers(resolveSuppliers(request));
+    }
+
+    private Set<Supplier> resolveSuppliers(ProductRequest request) {
+        LinkedHashSet<Long> requestedIds = getRequestedSupplierIds(request);
+        if (requestedIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<Supplier> suppliers = supplierRepository.findAllById(requestedIds);
+        Map<Long, Supplier> suppliersById = suppliers.stream()
+                .collect(Collectors.toMap(Supplier::getId, Function.identity()));
+
+        for (Long supplierId : requestedIds) {
+            if (!suppliersById.containsKey(supplierId)) {
+                throw new SupplierNotFoundException("Supplier not found with id: " + supplierId);
+            }
+        }
+
+        return requestedIds.stream()
+                .map(suppliersById::get)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private LinkedHashSet<Long> getRequestedSupplierIds(ProductRequest request) {
+        LinkedHashSet<Long> supplierIds = new LinkedHashSet<>();
+
+        if (request.getSupplierIds() != null) {
+            request.getSupplierIds().stream()
+                    .filter(id -> id != null)
+                    .forEach(supplierIds::add);
+        } else if (request.getSupplierId() != null) {
+            supplierIds.add(request.getSupplierId());
+        }
+
+        return supplierIds;
     }
 
     private ProductResponse toResponse(Product product) {
@@ -212,12 +246,36 @@ public class ProductService {
         response.setCreatedAt(product.getCreatedAt());
         response.setUpdatedAt(product.getUpdatedAt());
 
-        if (product.getSupplier() != null) {
-            response.setSupplierId(product.getSupplier().getId());
-            response.setSupplierName(product.getSupplier().getName());
+        List<Supplier> suppliers = sortedSuppliers(product);
+        List<Long> supplierIds = suppliers.stream()
+                .map(Supplier::getId)
+                .collect(Collectors.toList());
+        List<String> supplierNames = suppliers.stream()
+                .map(Supplier::getName)
+                .collect(Collectors.toList());
+
+        response.setSupplierIds(supplierIds);
+        response.setSupplierNames(supplierNames);
+
+        if (!suppliers.isEmpty()) {
+            response.setSupplierId(suppliers.get(0).getId());
+            response.setSupplierName(String.join(", ", supplierNames));
         }
 
         return response;
+    }
+
+    private List<Supplier> sortedSuppliers(Product product) {
+        if (product.getSuppliers() == null) {
+            return List.of();
+        }
+
+        return product.getSuppliers().stream()
+                .sorted(Comparator
+                        .comparing((Supplier supplier) -> supplier.getName() == null ? "" : supplier.getName(),
+                                String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Supplier::getId, Comparator.nullsLast(Long::compareTo)))
+                .collect(Collectors.toList());
     }
 
     private String normalizeNullable(String value) {
