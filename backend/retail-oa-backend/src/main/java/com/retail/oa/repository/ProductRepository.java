@@ -24,5 +24,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByStatusAndStockGreaterThan(ProductStatus status, Integer stock);
 
-    boolean existsBySupplierId(Long supplierId);
+    boolean existsBySuppliers_Id(Long supplierId);
 }

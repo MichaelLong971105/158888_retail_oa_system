@@ -89,7 +89,7 @@
               <el-option
                 v-for="product in productOptions"
                 :key="product.id"
-                :label="`${product.name} (${product.sku})`"
+                :label="formatProductOption(product)"
                 :value="product.id"
               />
             </el-select>
@@ -155,6 +155,11 @@ const getStatusType = (status) => {
   }
 
   return 'warning'
+}
+
+const formatProductOption = (product) => {
+  const suppliers = product.supplierName ? ` - ${product.supplierName}` : ''
+  return `${product.name} (${product.sku})${suppliers}`
 }
 
 const resetOrderForm = () => {

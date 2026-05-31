@@ -65,12 +65,6 @@ public class OrderService {
                             "Product not found with id: " + itemRequest.getProductId()
                     ));
 
-            if (product.getSupplier() == null || !supplier.getId().equals(product.getSupplier().getId())) {
-                throw new InvalidOperationException(
-                        "Product " + product.getName() + " does not belong to supplier " + supplier.getName()
-                );
-            }
-
             Integer quantity = itemRequest.getQuantity();
 
             if (quantity <= 0) {
@@ -227,6 +221,7 @@ public class OrderService {
             Integer quantity = item.getQuantity();
 
             product.setStock(product.getStock() + quantity);
+            linkSupplierIfMissing(product, order.getSupplier());
             productRepository.save(product);
 
             InventoryLog inventoryLog = new InventoryLog();
@@ -235,6 +230,15 @@ public class OrderService {
             inventoryLog.setQuantity(quantity);
             inventoryLog.setRemark("Stock in for received order " + order.getOrderNumber());
             inventoryLogRepository.save(inventoryLog);
+        }
+    }
+
+    private void linkSupplierIfMissing(Product product, Supplier supplier) {
+        boolean alreadyLinked = product.getSuppliers().stream()
+                .anyMatch(existingSupplier -> supplier.getId().equals(existingSupplier.getId()));
+
+        if (!alreadyLinked) {
+            product.getSuppliers().add(supplier);
         }
     }
 

@@ -38,7 +38,7 @@ class SupplierServiceTest {
         Supplier supplier = supplier(1L);
 
         when(supplierRepository.findById(supplier.getId())).thenReturn(Optional.of(supplier));
-        when(productRepository.existsBySupplierId(supplier.getId())).thenReturn(true);
+        when(productRepository.existsBySuppliers_Id(supplier.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> supplierService.deleteSupplier(supplier.getId()))
                 .isInstanceOf(InvalidOperationException.class)
@@ -52,7 +52,7 @@ class SupplierServiceTest {
         Supplier supplier = supplier(1L);
 
         when(supplierRepository.findById(supplier.getId())).thenReturn(Optional.of(supplier));
-        when(productRepository.existsBySupplierId(supplier.getId())).thenReturn(false);
+        when(productRepository.existsBySuppliers_Id(supplier.getId())).thenReturn(false);
         when(orderRepository.existsBySupplierId(supplier.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> supplierService.deleteSupplier(supplier.getId()))

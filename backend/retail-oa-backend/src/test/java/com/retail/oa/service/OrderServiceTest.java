@@ -8,7 +8,6 @@ import com.retail.oa.entity.OrderItem;
 import com.retail.oa.entity.OrderStatus;
 import com.retail.oa.entity.Product;
 import com.retail.oa.entity.Supplier;
-import com.retail.oa.exception.InvalidOperationException;
 import com.retail.oa.repository.InventoryLogRepository;
 import com.retail.oa.repository.OrderRepository;
 import com.retail.oa.repository.ProductRepository;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -50,10 +48,9 @@ class OrderServiceTest {
     private OrderService orderService;
 
     @Test
-    void createOrderRejectsProductFromAnotherSupplier() {
+    void createOrderAllowsProductFromUnlinkedSupplier() {
         Supplier selectedSupplier = supplier(1L, "Selected Supplier");
-        Supplier otherSupplier = supplier(2L, "Other Supplier");
-        Product product = product(10L, "Tea", otherSupplier, 20);
+        Product product = product(10L, "Tea", null, 20);
 
         OrderRequest request = new OrderRequest();
         request.setSupplierId(selectedSupplier.getId());
@@ -61,12 +58,17 @@ class OrderServiceTest {
 
         when(supplierRepository.findById(selectedSupplier.getId())).thenReturn(Optional.of(selectedSupplier));
         when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+            Order savedOrder = invocation.getArgument(0);
+            savedOrder.setId(100L);
+            return savedOrder;
+        });
 
-        assertThatThrownBy(() -> orderService.createOrder(request))
-                .isInstanceOf(InvalidOperationException.class)
-                .hasMessageContaining("does not belong to supplier");
-
-        verify(orderRepository, never()).save(any(Order.class));
+        assertThat(orderService.createOrder(request))
+                .satisfies(response -> {
+                    assertThat(response.getSupplierId()).isEqualTo(selectedSupplier.getId());
+                    assertThat(response.getItems()).hasSize(1);
+                });
     }
 
     @Test
@@ -89,6 +91,23 @@ class OrderServiceTest {
         assertThat(logCaptor.getValue().getChangeType()).isEqualTo("IN");
         assertThat(logCaptor.getValue().getQuantity()).isEqualTo(5);
         assertThat(logCaptor.getValue().getRemark()).contains(order.getOrderNumber());
+    }
+
+    @Test
+    void receivingPendingOrderAddsMissingSupplierToProduct() {
+        Supplier supplier = supplier(1L, "Main Supplier");
+        Product product = product(10L, "Coffee", null, 7);
+        Order order = order(100L, supplier, product, 5, OrderStatus.PENDING);
+
+        when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
+        when(productRepository.save(product)).thenReturn(product);
+        when(orderRepository.save(order)).thenReturn(order);
+
+        orderService.updateOrderStatus(order.getId(), "RECEIVED");
+
+        assertThat(product.getSuppliers())
+                .extracting(Supplier::getId)
+                .containsExactly(supplier.getId());
     }
 
     @Test
@@ -146,7 +165,9 @@ class OrderServiceTest {
         product.setId(id);
         product.setName(name);
         product.setSku("SKU-" + id);
-        product.setSupplier(supplier);
+        if (supplier != null) {
+            product.getSuppliers().add(supplier);
+        }
         product.setPrice(BigDecimal.valueOf(3.50));
         product.setStock(stock);
         return product;

@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * API response for product data shown by the frontend.
@@ -27,6 +28,8 @@ public class ProductResponse {
     private Integer minStock;
     private ProductStatus status;
     private String description;
+    private List<Long> supplierIds;
+    private List<String> supplierNames;
     private Long supplierId;
     private String supplierName;
     private LocalDateTime createdAt;

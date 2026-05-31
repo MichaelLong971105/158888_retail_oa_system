@@ -10,7 +10,14 @@
 
     <el-card>
       <div class="toolbar">
-        <el-select v-model="statusFilter" placeholder="Filter by status" clearable style="width: 220px">
+        <el-input
+          v-model="searchKeyword"
+          class="search-input"
+          clearable
+          placeholder="Search products"
+          :prefix-icon="Search"
+        />
+        <el-select v-model="statusFilter" class="status-select" placeholder="Filter by status" clearable>
           <el-option label="All Statuses" value="" />
           <el-option label="ACTIVE" value="ACTIVE" />
           <el-option label="INACTIVE" value="INACTIVE" />
@@ -27,7 +34,7 @@
         <el-table-column prop="category" label="Category" width="130" />
         <el-table-column prop="specification" label="Specification" width="140" />
         <el-table-column prop="unit" label="Unit" width="90" />
-        <el-table-column prop="supplierName" label="Supplier" min-width="160" />
+        <el-table-column prop="supplierName" label="Suppliers" min-width="180" />
         <el-table-column prop="price" label="Price" width="120">
           <template #default="scope">
             {{ formatCurrency(scope.row.price) }}
@@ -111,8 +118,16 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Supplier">
-              <el-select v-model="form.supplierId" clearable style="width: 100%">
+            <el-form-item label="Suppliers">
+              <el-select
+                v-model="form.supplierIds"
+                multiple
+                filterable
+                clearable
+                collapse-tags
+                collapse-tags-tooltip
+                style="width: 100%"
+              >
                 <el-option
                   v-for="supplier in supplierOptions"
                   :key="supplier.id"
@@ -172,6 +187,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import {
   createProduct,
   deleteProduct,
@@ -184,6 +200,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const dialogVisible = ref(false)
 const statusFilter = ref('')
+const searchKeyword = ref('')
 const productList = ref([])
 const supplierOptions = ref([])
 const form = reactive({
@@ -200,16 +217,36 @@ const form = reactive({
   minStock: 0,
   status: 'ACTIVE',
   description: '',
-  supplierId: null
+  supplierIds: []
 })
 
 const filteredProducts = computed(() => {
-  if (!statusFilter.value) {
-    return productList.value
-  }
+  const keyword = searchKeyword.value.trim().toLowerCase()
 
-  return productList.value.filter(product => product.status === statusFilter.value)
+  return productList.value.filter(product => {
+    const matchesStatus = !statusFilter.value || product.status === statusFilter.value
+    const matchesKeyword = !keyword || getProductSearchText(product).includes(keyword)
+    return matchesStatus && matchesKeyword
+  })
 })
+
+const getProductSearchText = (product) => {
+  return [
+    product.name,
+    product.sku,
+    product.barcode,
+    product.brand,
+    product.category,
+    product.specification,
+    product.unit,
+    product.supplierName,
+    ...(product.supplierNames || []),
+    product.description
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
 
 const formatCurrency = (value) => {
   const amount = Number(value || 0)
@@ -246,7 +283,7 @@ const resetForm = () => {
   form.minStock = 0
   form.status = 'ACTIVE'
   form.description = ''
-  form.supplierId = null
+  form.supplierIds = []
 }
 
 const normalizeOptional = (value) => {
@@ -297,7 +334,9 @@ const openEditDialog = async (product) => {
   form.minStock = Number(product.minStock || 0)
   form.status = product.status || 'ACTIVE'
   form.description = product.description || ''
-  form.supplierId = product.supplierId || null
+  form.supplierIds = product.supplierIds?.length
+    ? [...product.supplierIds]
+    : (product.supplierId ? [product.supplierId] : [])
   dialogVisible.value = true
 }
 
@@ -320,7 +359,7 @@ const submitForm = async () => {
     minStock: Number(form.minStock || 0),
     status: form.status,
     description: normalizeOptional(form.description),
-    supplierId: form.supplierId || null
+    supplierIds: form.supplierIds || []
   }
 
   submitting.value = true
@@ -390,8 +429,17 @@ onMounted(async () => {
 
 .toolbar {
   display: flex;
+  gap: 12px;
   justify-content: flex-end;
   margin-bottom: 16px;
+}
+
+.search-input {
+  width: 320px;
+}
+
+.status-select {
+  width: 220px;
 }
 
 @media (max-width: 768px) {
@@ -402,7 +450,14 @@ onMounted(async () => {
   }
 
   .toolbar {
+    flex-direction: column;
+    align-items: stretch;
     justify-content: flex-start;
+  }
+
+  .search-input,
+  .status-select {
+    width: 100%;
   }
 }
 </style>

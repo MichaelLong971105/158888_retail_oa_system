@@ -9,11 +9,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +26,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Represents a managed product in the internal supermarket system.
@@ -92,10 +96,15 @@ public class Product {
     @Column(length = 255)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "supplier_id")
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "product_suppliers",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "supplier_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "supplier_id"})
+    )
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Supplier supplier;
+    private Set<Supplier> suppliers = new HashSet<>();
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -108,7 +117,7 @@ public class Product {
 
     public Product(Long id, String name, String sku, String category, String barcode, String brand,
                    String specification, String unit, BigDecimal price, Integer stock, Integer minStock,
-                   ProductStatus status, String description, Supplier supplier, LocalDateTime createdAt,
+                   ProductStatus status, String description, Set<Supplier> suppliers, LocalDateTime createdAt,
                    LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
@@ -123,7 +132,7 @@ public class Product {
         this.minStock = minStock;
         this.status = status;
         this.description = description;
-        this.supplier = supplier;
+        this.suppliers = suppliers == null ? new HashSet<>() : suppliers;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }

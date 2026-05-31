@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Request payload for product create and update operations.
@@ -59,6 +60,8 @@ public class ProductRequest {
 
     @Size(max = 255, message = "Description cannot exceed 255 characters")
     private String description;
+
+    private List<Long> supplierIds;
 
     private Long supplierId;
 }

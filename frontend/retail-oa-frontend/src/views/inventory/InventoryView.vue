@@ -12,7 +12,7 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="Product Name" min-width="180" />
         <el-table-column prop="sku" label="SKU" width="140" />
-        <el-table-column prop="supplierName" label="Supplier" min-width="150" />
+        <el-table-column prop="supplierName" label="Suppliers" min-width="170" />
         <el-table-column prop="unit" label="Unit" width="90" />
         <el-table-column label="Status" width="140">
           <template #default="scope">

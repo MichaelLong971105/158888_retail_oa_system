@@ -90,7 +90,7 @@ public class SupplierService {
         Supplier supplier = supplierRepository.findById(id)
                 .orElseThrow(() -> new SupplierNotFoundException("Supplier not found with id: " + id));
 
-        if (productRepository.existsBySupplierId(id)) {
+        if (productRepository.existsBySuppliers_Id(id)) {
             throw new InvalidOperationException("Supplier cannot be deleted because it is linked to products");
         }
 

@@ -46,10 +46,16 @@ CREATE TABLE products (
     min_stock INT NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     description VARCHAR(255),
-    supplier_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_products_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE product_suppliers (
+    product_id BIGINT NOT NULL,
+    supplier_id BIGINT NOT NULL,
+    PRIMARY KEY (product_id, supplier_id),
+    CONSTRAINT fk_product_suppliers_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    CONSTRAINT fk_product_suppliers_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
 );
 
 CREATE TABLE orders (
